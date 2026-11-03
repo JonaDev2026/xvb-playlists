@@ -13,9 +13,11 @@ BASE = "https://gizmo.rakuten.tv/v3"
 CLASSIFICATION_ID = 36
 LOCALE = "it"
 HEADERS = {
-    "Origin": "https://rakuten.tv",
-    "Referer": "https://rakuten.tv/",
+    "Origin": "https://www.rakuten.tv",
+    "Referer": "https://www.rakuten.tv/",
     "User-Agent": "Mozilla/5.0",
+    "Accept": "application/json",
+    "Content-Type": "application/json",
 }
 PARAMS = {
     "classification_id": CLASSIFICATION_ID,
