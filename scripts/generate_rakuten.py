@@ -67,7 +67,9 @@ def get_categories():
 
 def get_stream(channel):
     languages = (channel.get("labels") or {}).get("languages") or []
-    audio_language = next((item.get("id") for item in languages if item.get("id")), "MIS")
+    if not languages or not languages[0].get("id"):
+        return ""
+    audio_language = languages[0]["id"]
     query = dict(
         PARAMS,
         device_stream_audio_quality="2.0",
@@ -90,6 +92,13 @@ def get_stream(channel):
     for attempt in range(3):
         try:
             response = SESSION.post(BASE + "/avod/streamings", params=query, json=body, timeout=30)
+            if response.status_code == 422:
+                print(
+                    f"Rakuten 422 per {channel.get('id')}: {response.text[:500]}",
+                    file=sys.stderr,
+                    flush=True,
+                )
+                return ""
             response.raise_for_status()
             payload = response.json()
             infos = (payload.get("data") or {}).get("stream_infos") or []
@@ -125,7 +134,11 @@ def main():
         number = channel.get("channel_number")
         images = channel.get("images") or {}
         logo = images.get("artwork_negative") or images.get("artwork") or ""
-        stream_url = get_stream(channel)
+        try:
+            stream_url = get_stream(channel)
+        except requests.RequestException as exc:
+            print(f"Errore stream {channel_id}: {exc}", file=sys.stderr, flush=True)
+            stream_url = ""
         item = {
             "id": channel_id,
             "numerical_id": channel.get("numerical_id"),
