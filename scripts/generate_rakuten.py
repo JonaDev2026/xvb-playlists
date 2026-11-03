@@ -41,13 +41,13 @@ def get_channels():
     channels = []
     page = 1
     while True:
-        params = dict(PARAMS, page=page, per_page=50)
+        params = dict(PARAMS, page=page, per_page=20)
         payload = get_json("/live_channels", params)
         batch = payload.get("data") or []
         if not batch:
             break
         channels.extend(batch)
-        if len(batch) < 50:
+        if len(batch) < 20:
             break
         page += 1
     if not channels:
@@ -67,7 +67,10 @@ def get_categories():
 
 def get_stream(channel):
     languages = (channel.get("labels") or {}).get("languages") or []
-    audio_language = next((item.get("id") for item in languages if item.get("id")), "MIS")
+    audio_language = languages[0].get("id") if languages else None
+    if not audio_language:
+        print(f"Rakuten: lingua audio assente per {channel.get('id')}", file=sys.stderr, flush=True)
+        return ""
     query = dict(
         PARAMS,
         device_stream_audio_quality="2.0",
