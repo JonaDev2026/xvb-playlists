@@ -1,196 +1,265 @@
-#!/usr/bin/env python3
 import json
-import os
-import re
-import sys
 import time
-from datetime import datetime, timezone
+import sys
 from pathlib import Path
 
 import requests
 
 BASE = "https://gizmo.rakuten.tv/v3"
 CLASSIFICATION_ID = 36
-LOCALE = "it"
+
+PARAMS = {
+    "classification_id": 36,
+    "device_identifier": "web",
+    "locale": "it",
+    "market_code": "it"
+}
+
 HEADERS = {
     "Origin": "https://rakuten.tv",
     "Referer": "https://rakuten.tv/",
-    "User-Agent": "Mozilla/5.0",
+    "User-Agent": "Mozilla/5.0"
 }
-PARAMS = {
-    "classification_id": CLASSIFICATION_ID,
-    "device_identifier": "web",
-    "locale": LOCALE,
-    "market_code": LOCALE,
-}
-OUT = Path("output")
-SESSION = requests.Session()
-SESSION.headers.update(HEADERS)
-STREAM_SESSION = requests.Session()
-STREAM_SESSION.headers.update(HEADERS)
+
+OUTPUT = Path("output")
+OUTPUT.mkdir(parents=True, exist_ok=True)
+
+CATALOG_FILE = OUTPUT / "rakuten_it.json"
+STREAMS_FILE = OUTPUT / "rakuten_streams.json"
+PLAYLIST_FILE = OUTPUT / "rakuten_it.m3u"
 
 
-def get_json(path, params=None):
-    response = SESSION.get(BASE + path, params=params or PARAMS, timeout=30)
-    response.raise_for_status()
-    data = response.json()
-    if isinstance(data, dict) and data.get("errors"):
-        raise RuntimeError(f"Rakuten API error on {path}: {data['errors']}")
-    return data
+def get_catalog():
+    session = requests.Session()
+    session.headers.update(HEADERS)
 
-
-def get_channels():
-    channels = []
+    channels = {}
     page = 1
+
     while True:
-        params = dict(PARAMS, page=page, per_page=50)
-        payload = get_json("/live_channels", params)
-        batch = payload.get("data") or []
-        if not batch:
+        params = {**PARAMS, "page": page, "per_page": 50}
+
+        response = session.get(
+            BASE + "/live_channels",
+            params=params,
+            timeout=30
+        )
+        response.raise_for_status()
+
+        data = response.json().get("data", [])
+
+        if not data:
             break
-        channels.extend(batch)
-        if len(batch) < 50:
+
+        for channel in data:
+            channels[channel["id"]] = channel
+
+        print(
+            f"Pagina {page}: {len(data)} canali | "
+            f"Totale: {len(channels)}",
+            flush=True
+        )
+
+        if len(data) < 50:
             break
+
         page += 1
-    if not channels:
-        raise RuntimeError("Rakuten returned no live channels")
-    return channels
+        time.sleep(0.3)
 
-
-def get_categories():
-    payload = get_json("/live_channel_categories")
-    result = {}
-    for category in payload.get("data") or []:
-        name = category.get("name") or category.get("title") or "Altri"
-        for channel_id in category.get("live_channels") or []:
-            result[channel_id] = name
-    return result
-
-
-def get_stream(channel):
-    languages = (channel.get("labels") or {}).get("languages") or []
-    audio_language = languages[0].get("id") if languages else None
-    if not audio_language:
-        print(f"Rakuten: lingua audio assente per {channel.get('id')}", file=sys.stderr, flush=True)
-        return ""
-    query = dict(
-        PARAMS,
-        device_stream_audio_quality="2.0",
-        device_stream_hdr_type="NONE",
-        device_stream_video_quality="FHD",
-        disable_dash_legacy_packages="false",
+    response = session.get(
+        BASE + "/live_channel_categories",
+        params=PARAMS,
+        timeout=30
     )
-    body = {
-        "audio_language": audio_language,
-        "audio_quality": "2.0",
-        "classification_id": CLASSIFICATION_ID,
-        "content_id": channel["id"],
-        "content_type": "live_channels",
-        "device_serial": "not implemented",
-        "player": "web:HLS-NONE:NONE",
-        "strict_video_quality": False,
-        "subtitle_language": "MIS",
-        "video_type": "stream",
+    response.raise_for_status()
+
+    categories = response.json()
+    category_map = {}
+
+    for category in categories.get("data", []):
+        for channel_id in category.get("live_channels", []):
+            category_map[channel_id] = category.get("name", "")
+
+    result = []
+
+    for channel in channels.values():
+        channel["rakuten_category"] = category_map.get(
+            channel["id"], ""
+        )
+        result.append(channel)
+
+    output = {
+        "country": "it",
+        "total_channels": len(result),
+        "categories": categories,
+        "channels": result
     }
-    for attempt in range(3):
+
+    with open(CATALOG_FILE, "w", encoding="utf-8") as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+
+    print(f"\nCOMPLETATO: {len(result)} canali", flush=True)
+    print(f"File creato: {CATALOG_FILE}", flush=True)
+
+
+def get_streams():
+    with open(CATALOG_FILE, encoding="utf-8") as f:
+        catalog = json.load(f)
+
+    session = requests.Session()
+    session.headers.update(HEADERS)
+
+    base = BASE + "/avod/streamings"
+
+    params = {
+        "classification_id": 36,
+        "device_identifier": "web",
+        "device_stream_audio_quality": "2.0",
+        "device_stream_hdr_type": "NONE",
+        "device_stream_video_quality": "FHD",
+        "disable_dash_legacy_packages": "false",
+        "locale": "it",
+        "market_code": "it"
+    }
+
+    ok = []
+    ko = []
+
+    for i, channel in enumerate(catalog["channels"], 1):
+        languages = channel.get("labels", {}).get("languages", [])
+
+        if not languages:
+            ko.append((channel["title"], "lingua assente"))
+            continue
+
+        payload = {
+            "audio_language": languages[0]["id"],
+            "audio_quality": "2.0",
+            "classification_id": 36,
+            "content_id": channel["id"],
+            "content_type": "live_channels",
+            "device_serial": "not implemented",
+            "player": "web:HLS-NONE:NONE",
+            "strict_video_quality": False,
+            "subtitle_language": "MIS",
+            "video_type": "stream"
+        }
+
         try:
-            response = STREAM_SESSION.post(BASE + "/avod/streamings", params=query, json=body, timeout=20)
-            if response.status_code == 422:
-                print(
-                    f"Rakuten 422 per {channel.get('id')}: {response.text[:500]}",
-                    file=sys.stderr,
-                    flush=True,
-                )
-                return ""
-            response.raise_for_status()
-            payload = response.json()
-            infos = (payload.get("data") or {}).get("stream_infos") or []
-            url = next((item.get("url") for item in infos if item.get("url")), "")
+            response = session.post(
+                base,
+                params=params,
+                json=payload,
+                timeout=20
+            )
+
+            data = response.json()
+            infos = data.get("data", {}).get("stream_infos", [])
+            url = infos[0].get("url") if infos else None
+
             if url:
-                return url.split(".m3u8", 1)[0] + ".m3u8" if ".m3u8" in url else url
-            return ""
-        except requests.RequestException:
-            if attempt == 2:
-                raise
-            time.sleep(2 ** attempt)
-    return ""
+                ok.append({
+                    "id": channel["id"],
+                    "title": channel["title"],
+                    "url": url
+                })
+                print(
+                    f"{i}/{len(catalog['channels'])} OK  "
+                    f"{channel['title']}",
+                    flush=True
+                )
+            else:
+                error = data.get(
+                    "errors",
+                    data.get("error", "stream assente")
+                )
+                ko.append((channel["title"], str(error)[:160]))
+                print(
+                    f"{i}/{len(catalog['channels'])} NO  "
+                    f"{channel['title']}: {str(error)[:160]}",
+                    flush=True
+                )
+
+        except Exception as e:
+            ko.append((channel["title"], str(e)))
+            print(
+                f"{i}/{len(catalog['channels'])} ERRORE "
+                f"{channel['title']}: {e}",
+                flush=True
+            )
+
+        time.sleep(0.3)
+
+    with open(STREAMS_FILE, "w", encoding="utf-8") as f:
+        json.dump(
+            {"available": ok, "unavailable": ko},
+            f,
+            ensure_ascii=False,
+            indent=2
+        )
+
+    print(f"\nSTREAM DISPONIBILI: {len(ok)}", flush=True)
+    print(f"NON DISPONIBILI: {len(ko)}", flush=True)
+    print(f"File creato: {STREAMS_FILE}", flush=True)
+
+    if not ok:
+        raise RuntimeError("Nessuno stream Rakuten disponibile")
 
 
-def clean(value):
-    return re.sub(r'[\r\n"]+', " ", str(value or "")).strip()
+def generate_playlist():
+    with open(CATALOG_FILE, encoding="utf-8") as f:
+        catalog = json.load(f)
+
+    with open(STREAMS_FILE, encoding="utf-8") as f:
+        streams = json.load(f)
+
+    stream_map = {
+        channel["id"]: channel["url"]
+        for channel in streams["available"]
+    }
+
+    lines = ["#EXTM3U"]
+
+    for channel in catalog["channels"]:
+        channel_id = channel["id"]
+        url = stream_map.get(channel_id)
+
+        if not url:
+            continue
+
+        title = str(channel.get("title", "")).replace('"', "'")
+        category = str(
+            channel.get("rakuten_category") or "Altri"
+        ).replace('"', "'")
+
+        images = channel.get("images") or {}
+        logo = images.get("artwork_negative", "")
+        number = channel.get("channel_number", "")
+
+        lines.append(
+            f'#EXTINF:-1 tvg-id="{channel_id}" '
+            f'tvg-name="{title}" '
+            f'tvg-logo="{logo}" '
+            f'tvg-chno="{number}" '
+            f'group-title="{category}",{title}'
+        )
+        lines.append(url)
+
+    with open(PLAYLIST_FILE, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+    print(
+        f"\nPlaylist creata: {PLAYLIST_FILE} "
+        f"({len(stream_map)} stream disponibili)",
+        flush=True
+    )
 
 
 def main():
-    OUT.mkdir(parents=True, exist_ok=True)
-    raw_channels = get_channels()
-    categories = get_categories()
-    output = []
-    lines = ["#EXTM3U"]
-
-    raw_channels.sort(key=lambda c: (int(c.get("channel_number") or 99999), clean(c.get("title"))))
-    for index, channel in enumerate(raw_channels, 1):
-        channel_id = channel.get("id")
-        if not channel_id:
-            continue
-        title = clean(channel.get("title")) or channel_id
-        category = categories.get(channel_id, "Altri")
-        number = channel.get("channel_number")
-        images = channel.get("images") or {}
-        logo = images.get("artwork_negative") or images.get("artwork") or ""
-        try:
-            stream_url = get_stream(channel)
-        except requests.RequestException as exc:
-            print(f"Errore stream {channel_id}: {exc}", file=sys.stderr, flush=True)
-            stream_url = ""
-        item = {
-            "id": channel_id,
-            "numerical_id": channel.get("numerical_id"),
-            "channel_number": number,
-            "title": title,
-            "category": category,
-            "logo": logo,
-            "url": stream_url,
-            "language_ids": [
-                lang.get("id") for lang in ((channel.get("labels") or {}).get("languages") or [])
-                if lang.get("id")
-            ],
-        }
-        output.append(item)
-        if stream_url:
-            attrs = [
-                f'tvg-id="{clean(channel_id)}"',
-                f'tvg-name="{title}"',
-                f'tvg-logo="{clean(logo)}"',
-                f'tvg-chno="{clean(number)}"',
-                f'group-title="{category}"',
-            ]
-            lines.append(f"#EXTINF:-1 {' '.join(attrs)},{title}")
-            lines.append(stream_url)
-        print(f"[{index}/{len(raw_channels)}] {title}: {'OK' if stream_url else 'stream non disponibile'}", flush=True)
-
-    available = sum(bool(item["url"]) for item in output)
-    if available == 0:
-        raise RuntimeError("No playable streams returned; output files were not updated")
-
-    document = {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "country": "it",
-        "total_channels": len(output),
-        "available_streams": available,
-        "channels": output,
-    }
-    (OUT / "rakuten_it.json").write_text(
-        json.dumps(document, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    (OUT / "rakuten_it.m3u").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"Creati {OUT / 'rakuten_it.m3u'} e {OUT / 'rakuten_it.json'}")
-    print(f"Canali: {len(output)} | stream disponibili: {available}")
+    get_catalog()
+    get_streams()
+    generate_playlist()
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as exc:
-        print(f"ERRORE: {exc}", file=sys.stderr)
-        sys.exit(1)
+    main()
