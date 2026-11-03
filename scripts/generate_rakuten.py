@@ -13,11 +13,9 @@ BASE = "https://gizmo.rakuten.tv/v3"
 CLASSIFICATION_ID = 36
 LOCALE = "it"
 HEADERS = {
-    "Origin": "https://www.rakuten.tv",
-    "Referer": "https://www.rakuten.tv/",
+    "Origin": "https://rakuten.tv",
+    "Referer": "https://rakuten.tv/",
     "User-Agent": "Mozilla/5.0",
-    "Accept": "application/json",
-    "Content-Type": "application/json",
 }
 PARAMS = {
     "classification_id": CLASSIFICATION_ID,
@@ -69,9 +67,7 @@ def get_categories():
 
 def get_stream(channel):
     languages = (channel.get("labels") or {}).get("languages") or []
-    if not languages or not languages[0].get("id"):
-        return ""
-    audio_language = languages[0]["id"]
+    audio_language = next((item.get("id") for item in languages if item.get("id")), "MIS")
     query = dict(
         PARAMS,
         device_stream_audio_quality="2.0",
