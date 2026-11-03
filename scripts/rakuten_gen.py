@@ -93,6 +93,7 @@ def get_streams(session, channels):
     }
 
     available = {}
+    error_body_logged = False
 
     for i, channel in enumerate(channels, 1):
         languages = channel.get("labels", {}).get("languages", [])
@@ -125,6 +126,14 @@ def get_streams(session, channels):
                 json=payload,
                 timeout=20
             )
+            if response.status_code >= 400 and not error_body_logged:
+                print(
+                    f"RISPOSTA RAKUTEN {response.status_code}: "
+                    f"{response.text[:1500]}",
+                    flush=True
+                )
+                error_body_logged = True
+
             response.raise_for_status()
 
             data = response.json()
