@@ -164,10 +164,10 @@ def main():
         "channels": output,
     }
     (OUT / "rakuten_it.json").write_text(
-        json.dumps(document, ensure_ascii=False, indent=2) + "\\n",
+        json.dumps(document, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    (OUT / "rakuten_it.m3u").write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+    (OUT / "rakuten_it.m3u").write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Creati {OUT / 'rakuten_it.m3u'} e {OUT / 'rakuten_it.json'}")
     print(f"Canali: {len(output)} | stream disponibili: {available}")
 
