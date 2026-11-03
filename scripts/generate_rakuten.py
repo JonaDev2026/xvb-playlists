@@ -112,7 +112,7 @@ def get_stream(channel):
 
 
 def clean(value):
-    return re.sub(r'[\\r\\n"]+', " ", str(value or "")).strip()
+    return re.sub(r'[\r\n"]+', " ", str(value or "")).strip()
 
 
 def main():
