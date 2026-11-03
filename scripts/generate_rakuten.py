@@ -26,6 +26,8 @@ PARAMS = {
 OUT = Path("output")
 SESSION = requests.Session()
 SESSION.headers.update(HEADERS)
+STREAM_SESSION = requests.Session()
+STREAM_SESSION.headers.update(HEADERS)
 
 
 def get_json(path, params=None):
@@ -41,13 +43,13 @@ def get_channels():
     channels = []
     page = 1
     while True:
-        params = dict(PARAMS, page=page, per_page=20)
+        params = dict(PARAMS, page=page, per_page=50)
         payload = get_json("/live_channels", params)
         batch = payload.get("data") or []
         if not batch:
             break
         channels.extend(batch)
-        if len(batch) < 20:
+        if len(batch) < 50:
             break
         page += 1
     if not channels:
@@ -92,7 +94,7 @@ def get_stream(channel):
     }
     for attempt in range(3):
         try:
-            response = SESSION.post(BASE + "/avod/streamings", params=query, json=body, timeout=30)
+            response = STREAM_SESSION.post(BASE + "/avod/streamings", params=query, json=body, timeout=20)
             if response.status_code == 422:
                 print(
                     f"Rakuten 422 per {channel.get('id')}: {response.text[:500]}",
@@ -120,8 +122,8 @@ def clean(value):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    categories = get_categories()
     raw_channels = get_channels()
+    categories = get_categories()
     output = []
     lines = ["#EXTM3U"]
 
