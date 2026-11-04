@@ -1,0 +1,46 @@
+#EXTM3U
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/RTL%20102.5%20logo.svg" group-title="Radio",RTL 102.5
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/RDS-Logo.png" group-title="Radio",RDS 100.5
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Logo%20Deejay.svg" group-title="Radio",Radio Deejay
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Radio%20105%20italy%202023.png" group-title="Radio",Radio 105
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Rai%20Radio%201%20-%20Logo%202017.svg" group-title="Radio",Rai Radio 1
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Rai%20Radio%202%20-%20Logo%202017.svg" group-title="Radio",Rai Radio 2
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Rai%20Radio%203%20-%20Logo%202017.svg" group-title="Radio",Rai Radio 3
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Virgin%20Radio%20Italy%20logo.svg" group-title="Radio",Virgin Radio
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Radio%20Monte%20Carlo.jpg" group-title="Radio",Radio Monte Carlo
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Radio%20Italia%20logo%20%282020%29.svg" group-title="Radio",Radio Italia Solo Musica Italiana
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Radio%20m2o%20-%20Logo%202019.svg" group-title="Radio",m2o
+url-dello-stream-qui
+
+#EXTINF:-1 group-title="Radio",Radio 24
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/Radio%20Capital%20logo.svg" group-title="Radio",Radio Capital
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/R101%20-%20Logo%202015.svg" group-title="Radio",R101
+url-dello-stream-qui
+
+#EXTINF:-1 tvg-logo="https://commons.wikimedia.org/wiki/Special:FilePath/RADIO%20KISSKKISS%20TV%20FHD.png" group-title="Radio",Radio Kiss Kiss
+url-dello-stream-qui
