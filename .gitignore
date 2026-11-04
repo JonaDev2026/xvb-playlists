@@ -1,2 +1,5 @@
 run.py
 scripts/
+logs/
+data/
+script-off/
