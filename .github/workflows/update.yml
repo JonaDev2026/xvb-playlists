@@ -22,11 +22,14 @@ jobs:
       - name: Install dependencies
         run: python -m pip install requests
 
+      - name: Diagnose Rakuten request
+        run: python scripts/rakuten_probe.py 2>&1 | tee run.log
+
       - name: Run generators
         shell: bash
         run: |
           set -o pipefail
-          python run.py 2>&1 | tee run.log
+          python run.py 2>&1 | tee -a run.log
           if grep -q "ERRORE" run.log; then
             echo "Generation reported errors; generated files will not be published."
             exit 1
