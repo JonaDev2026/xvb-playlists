@@ -10,7 +10,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 PLAYLIST_URL = "https://raw.githubusercontent.com/JonaDev2026/xvb-playlists/refs/heads/main/output/Rakuten%40it.m3u"
-OUTPUT_FILE = "epg/rakuten_it.xml"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT_FILE = os.path.join(BASE_DIR, "epg", "rakuten_it.xml")
 
 API_URL = "https://gizmo.rakuten.tv/v3/live_channels"
 
