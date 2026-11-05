@@ -1,0 +1,42 @@
+name: Test Rakuten M3U
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-rakuten:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install dependency
+        run: python -m pip install requests
+
+      - name: Run Rakuten generator
+        id: rakuten
+        shell: bash
+        run: |
+          set +e
+          python scripts/rakuten_gen.py 2>&1 | tee rakuten-test.log
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Save test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rakuten-test-results
+          if-no-files-found: warn
+          path: |
+            rakuten-test.log
+            output/Rakuten@it.m3u
