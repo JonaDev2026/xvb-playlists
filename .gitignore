@@ -1,4 +1,6 @@
 run.py
 logs/
-data/
+data/*
+!data/loghi.json
+temp/
 script-off/
