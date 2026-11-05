@@ -1,222 +1,244 @@
+import re
 import time
+import xml.etree.ElementTree as ET
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 import requests
 
-BASE = "https://gizmo.rakuten.tv/v3"
-OUTPUT = Path(__file__).resolve().parent.parent / "output" / "Rakuten@it.m3u"
+ROOT = Path(__file__).resolve().parent.parent
+SOURCE_URL = "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/it_rakuten.m3u"
+API_BASE = "https://gizmo.rakuten.tv/v3"
+EPG_FILE = ROOT / "epg" / "rakuten_it.xml"
+OUTPUT_FILE = ROOT / "output" / "Rakuten@it.m3u"
+TEMP_FILE = ROOT / "temp" / "Rakuten@it.m3u.tmp"
 
 PARAMS = {
     "classification_id": 36,
     "device_identifier": "web",
     "locale": "it",
-    "market_code": "it"
+    "market_code": "it",
 }
 
 HEADERS = {
-    "Origin": "https://rakuten.tv",
-    "Referer": "https://rakuten.tv/",
-    "User-Agent": "Mozilla/5.0"
+    "Origin": "https://www.rakuten.tv",
+    "Referer": "https://www.rakuten.tv/",
+    "User-Agent": "Mozilla/5.0",
+    "Accept": "application/json, text/plain, */*",
 }
 
 
-def get_catalog(session):
-    channels = {}
+def clean(value):
+    return str(value or "").replace('"', "'").strip()
+
+
+def parse_playlist(text):
+    channels = []
+    current = None
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+
+        if line.startswith("#EXTINF:"):
+            title = line.rsplit(",", 1)[-1].strip() if "," in line else ""
+            match = re.search(r'tvg-id="([^"]*)"', line)
+            current = {
+                "source_id": match.group(1).strip() if match else "",
+                "name": title,
+                "url": "",
+            }
+
+        elif line.startswith(("http://", "https://")) and current:
+            current["url"] = line
+            channels.append(current)
+            current = None
+
+    return channels
+
+
+def load_epg_ids():
+    if not EPG_FILE.is_file():
+        raise FileNotFoundError(f"EPG Rakuten non trovato: {EPG_FILE}")
+
+    root = ET.parse(EPG_FILE).getroot()
+    ids = {
+        element.get("id", "").strip()
+        for element in root.findall("./channel")
+        if element.get("id")
+    }
+
+    if not ids:
+        raise RuntimeError("Nessun ID canale trovato nell'EPG Rakuten")
+
+    return ids
+
+
+def extract_numeric_ids(url):
+    parsed = urlparse(url)
+    query = parse_qs(parsed.query)
+    found = set()
+
+    for key, values in query.items():
+        normalized = key.lower().replace("_", ".")
+        if normalized in {
+            "channel.id",
+            "ads.rtv.channel.id",
+            "ads.rtv.content.id",
+        }:
+            for value in values:
+                if value.isdigit():
+                    found.add(int(value))
+
+    for value in re.findall(r"LiveChannel-(\d+)", parsed.path, re.IGNORECASE):
+        found.add(int(value))
+
+    return found
+
+
+def get_catalogue(session):
+    catalogue = {}
     page = 1
 
     while True:
-        params = {**PARAMS, "page": page, "per_page": 50}
-
         response = session.get(
-            BASE + "/live_channels",
-            params=params,
-            timeout=30
+            API_BASE + "/live_channels",
+            params={**PARAMS, "page": page, "per_page": 50},
+            timeout=(15, 60),
         )
         response.raise_for_status()
+        channels = response.json().get("data", [])
 
-        data = response.json().get("data", [])
-
-        if not data:
+        if not channels:
             break
 
-        for channel in data:
-            channels[channel["id"]] = channel
+        for channel in channels:
+            channel_id = str(channel.get("id") or "").strip()
+            if channel_id:
+                catalogue[channel_id] = channel
 
-        print(
-            f"Pagina {page}: {len(data)} canali | "
-            f"Totale: {len(channels)}",
-            flush=True
-        )
+        print(f"Catalogo Rakuten pagina {page}: {len(channels)} | Totale: {len(catalogue)}", flush=True)
 
-        if len(data) < 50:
+        if len(channels) < 50:
             break
 
         page += 1
         time.sleep(0.3)
 
+    if not catalogue:
+        raise RuntimeError("Il catalogo API Rakuten è vuoto")
+
     response = session.get(
-        BASE + "/live_channel_categories",
+        API_BASE + "/live_channel_categories",
         params=PARAMS,
-        timeout=30
+        timeout=(15, 60),
     )
     response.raise_for_status()
 
-    categories = response.json()
-    category_map = {}
-
-    for category in categories.get("data", []):
+    categories = {}
+    for category in response.json().get("data", []):
+        name = clean(category.get("name"))
         for channel_id in category.get("live_channels", []):
-            category_map[channel_id] = category.get("name", "")
+            categories[str(channel_id)] = name
 
-    for channel in channels.values():
-        channel["rakuten_category"] = category_map.get(
-            channel["id"], ""
-        )
+    by_numeric_id = {}
+    for channel_id, channel in catalogue.items():
+        numeric_id = channel.get("numerical_id")
+        if numeric_id is not None:
+            by_numeric_id.setdefault(str(numeric_id), []).append(channel)
 
-    print(f"\nCOMPLETATO: {len(channels)} canali", flush=True)
+        channel["rakuten_category"] = categories.get(channel_id, "")
 
-    return list(channels.values())
-
-
-def get_streams(session, channels):
-    base = BASE + "/avod/streamings"
-
-    params = {
-        "classification_id": 36,
-        "device_identifier": "web",
-        "device_stream_audio_quality": "2.0",
-        "device_stream_hdr_type": "NONE",
-        "device_stream_video_quality": "FHD",
-        "disable_dash_legacy_packages": "false",
-        "locale": "it",
-        "market_code": "it"
-    }
-
-    available = {}
-
-    for i, channel in enumerate(channels, 1):
-        languages = channel.get("labels", {}).get("languages", [])
-
-        if not languages:
-            print(
-                f"{i}/{len(channels)} NO  "
-                f"{channel['title']}: lingua assente",
-                flush=True
-            )
-            continue
-
-        payload = {
-            "audio_language": languages[0]["id"],
-            "audio_quality": "2.0",
-            "classification_id": 36,
-            "content_id": channel["id"],
-            "content_type": "live_channels",
-            "device_serial": "not implemented",
-            "player": "web:HLS-NONE:NONE",
-            "strict_video_quality": False,
-            "subtitle_language": "MIS",
-            "video_type": "stream"
-        }
-
-        try:
-            response = session.post(
-                base,
-                params=params,
-                json=payload,
-                timeout=20
-            )
-            response.raise_for_status()
-
-            data = response.json()
-            infos = data.get("data", {}).get("stream_infos", [])
-            url = infos[0].get("url") if infos else None
-
-            if url:
-                available[channel["id"]] = url
-
-                print(
-                    f"{i}/{len(channels)} OK  "
-                    f"{channel['title']}",
-                    flush=True
-                )
-            else:
-                error = data.get(
-                    "errors",
-                    data.get("error", "stream assente")
-                )
-
-                print(
-                    f"{i}/{len(channels)} NO  "
-                    f"{channel['title']}: {str(error)[:160]}",
-                    flush=True
-                )
-
-        except Exception as e:
-            print(
-                f"{i}/{len(channels)} ERRORE "
-                f"{channel['title']}: {e}",
-                flush=True
-            )
-
-        time.sleep(0.3)
-
-    print(f"\nSTREAM DISPONIBILI: {len(available)}", flush=True)
-    print(
-        f"NON DISPONIBILI: {len(channels) - len(available)}",
-        flush=True
-    )
-
-    if not available:
-        raise RuntimeError("Nessuno stream Rakuten disponibile")
-
-    return available
+    return catalogue, by_numeric_id
 
 
-def generate_playlist(channels, streams):
+def match_channel(source, epg_ids, catalogue, by_numeric_id):
+    source_id = source["source_id"]
+
+    if source_id in epg_ids and source_id in catalogue:
+        return catalogue[source_id]
+
+    candidates = {}
+    for numeric_id in extract_numeric_ids(source["url"]):
+        for channel in by_numeric_id.get(str(numeric_id), []):
+            channel_id = str(channel.get("id") or "")
+            if channel_id in epg_ids:
+                candidates[channel_id] = channel
+
+    if len(candidates) == 1:
+        return next(iter(candidates.values()))
+
+    return None
+
+
+def generate_playlist(source_channels, epg_ids, catalogue, by_numeric_id):
     lines = ["#EXTM3U"]
+    included = set()
+    skipped = []
 
-    for channel in channels:
-        channel_id = channel["id"]
-        url = streams.get(channel_id)
+    for source in source_channels:
+        channel = match_channel(source, epg_ids, catalogue, by_numeric_id)
 
-        if not url:
+        if not channel:
+            skipped.append(source["name"])
             continue
 
-        title = str(channel.get("title", "")).replace('"', "'")
-        category = str(
-            channel.get("rakuten_category") or "Altri"
-        ).replace('"', "'")
+        channel_id = str(channel.get("id") or "").strip()
+        if not channel_id or channel_id not in epg_ids or channel_id in included:
+            continue
 
         images = channel.get("images") or {}
-        logo = images.get("artwork_negative", "")
-        number = channel.get("channel_number", "")
+        logo = images.get("artwork_negative") or ""
+        title = clean(source["name"] or channel.get("title") or channel_id)
+        category = clean(channel.get("rakuten_category") or "Altri")
+        number = clean(channel.get("channel_number"))
 
         lines.append(
             f'#EXTINF:-1 tvg-id="{channel_id}" '
             f'tvg-name="{title}" '
-            f'tvg-logo="{logo}" '
+            f'tvg-logo="{clean(logo)}" '
             f'tvg-chno="{number}" '
             f'group-title="{category}",{title}'
         )
-        lines.append(url)
+        lines.append(source["url"])
+        included.add(channel_id)
 
-    with open(OUTPUT, "w", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
+    if not included:
+        raise RuntimeError(
+            "Nessun canale iptv-org associato agli ID presenti in epg/rakuten_it.xml"
+        )
 
-    print(
-        f"\nPlaylist creata: {OUTPUT} "
-        f"({len(streams)} stream disponibili)",
-        flush=True
-    )
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TEMP_FILE.parent.mkdir(parents=True, exist_ok=True)
+    TEMP_FILE.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    TEMP_FILE.replace(OUTPUT_FILE)
+
+    print(f"Canali iptv-org letti: {len(source_channels)}")
+    print(f"Canali presenti nell'EPG e inseriti: {len(included)}")
+    print(f"Canali non associati: {len(skipped)}")
+    for name in skipped:
+        print(f"NON ASSOCIATO: {name}")
+    print(f"Playlist creata: {OUTPUT_FILE}", flush=True)
 
 
 def main():
     session = requests.Session()
     session.headers.update(HEADERS)
 
-    channels = get_catalog(session)
-    streams = get_streams(session, channels)
-    generate_playlist(channels, streams)
+    print("Lettura playlist iptv-org...", flush=True)
+    response = session.get(SOURCE_URL, timeout=(15, 60))
+    response.raise_for_status()
+    source_channels = parse_playlist(response.text)
+
+    if not source_channels:
+        raise RuntimeError("La playlist iptv-org è vuota o non valida")
+
+    print(f"Stream iptv-org letti: {len(source_channels)}", flush=True)
+
+    epg_ids = load_epg_ids()
+    print(f"ID presenti nell'EPG Rakuten: {len(epg_ids)}", flush=True)
+
+    catalogue, by_numeric_id = get_catalogue(session)
+    generate_playlist(source_channels, epg_ids, catalogue, by_numeric_id)
 
 
 if __name__ == "__main__":
