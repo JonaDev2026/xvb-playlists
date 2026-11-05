@@ -1,0 +1,150 @@
+name: Update playlists and EPG
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: playlist-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check requests
+
+      - name: Prepare temporary directory
+        run: mkdir -p temp data output epg
+
+      - name: Validate data directory
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          data = Path("data")
+          files = sorted(p.name for p in data.iterdir() if p.is_file())
+          if files != ["loghi.json"]:
+              raise SystemExit(f"data/ deve contenere solo loghi.json. Trovati: {files}")
+
+          with (data / "loghi.json").open(encoding="utf-8") as f:
+              logos = json.load(f)
+
+          if not isinstance(logos, dict) or not logos:
+              raise SystemExit("loghi.json non contiene una mappa JSON valida")
+
+          print(f"Loghi configurati: {len(logos)}")
+          PY
+
+      - name: Generate DVB playlist
+        run: python scripts/dvb_gen.py
+
+      - name: Generate Pluto playlist
+        run: python scripts/pluto_gen.py
+
+      - name: Generate Samsung TV Plus playlist
+        run: python scripts/samsungtv_gen.py
+
+      - name: Validate generated playlists
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          checks = {
+              "output/DVB@it.m3u": 30,
+              "output/Pluto@it.m3u": 20,
+              "output/SamTV+@it.m3u": 20,
+          }
+
+          for filename, minimum in checks.items():
+              path = Path(filename)
+              if not path.is_file():
+                  raise SystemExit(f"Output mancante: {filename}")
+
+              lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines()]
+              entries = [line for line in lines if line.startswith("#EXTINF:")]
+              urls = [line for line in lines if line.startswith(("http://", "https://"))]
+
+              if not lines or lines[0] != "#EXTM3U":
+                  raise SystemExit(f"Header M3U non valido: {filename}")
+              if len(entries) < minimum or len(entries) != len(urls):
+                  raise SystemExit(
+                      f"Output incompleto {filename}: {len(entries)} voci, {len(urls)} URL"
+                  )
+
+              print(f"{filename}: {len(entries)} canali verificati")
+          PY
+
+      - name: Update Pluto, Samsung and DVB EPG
+        run: python scripts/epg_gen.py
+
+      - name: Update Rakuten EPG (existing playlist only)
+        id: rakuten_epg
+        continue-on-error: true
+        run: python scripts/epg_rakuten.py
+
+      - name: Validate EPG files
+        run: |
+          python - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+
+          files = [
+              "epg/xvb-Pluto.xml",
+              "epg/xvb-SamTv.xml",
+              "epg/xvb-dvb-it.xml",
+          ]
+
+          for filename in files:
+              root = ET.parse(filename).getroot()
+              channels = root.findall(".//channel")
+              programmes = root.findall(".//programme")
+              if root.tag.split("}")[-1] != "tv" or not channels or not programmes:
+                  raise SystemExit(f"EPG non valido o vuoto: {filename}")
+              print(f"{filename}: {len(channels)} canali, {len(programmes)} programmi")
+
+          rakuten = Path("epg/rakuten_it.xml")
+          if rakuten.exists():
+              root = ET.parse(rakuten).getroot()
+              print(f"Rakuten EPG presente: {len(root.findall('.//programme'))} programmi")
+          PY
+
+      - name: Commit updated playlists and EPG
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            output/DVB@it.m3u \
+            output/Pluto@it.m3u \
+            output/SamTV+@it.m3u \
+            epg/xvb-Pluto.xml \
+            epg/xvb-SamTv.xml \
+            epg/xvb-dvb-it.xml \
+            epg/rakuten_it.xml
+          if git diff --cached --quiet; then
+            echo "Nessuna modifica da pubblicare"
+          else
+            git commit -m "Automated playlist and EPG update"
+            git push
+          fi
+
+      - name: Remove temporary files
+        if: always()
+        run: rm -rf temp/*
