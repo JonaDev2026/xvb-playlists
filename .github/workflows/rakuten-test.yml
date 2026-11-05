@@ -1,4 +1,4 @@
-name: Test Rakuten M3U
+name: Test Rakuten (3 channels)
 
 on:
   workflow_dispatch:
@@ -21,22 +21,15 @@ jobs:
       - name: Install dependency
         run: python -m pip install requests
 
-      - name: Run Rakuten generator
-        id: rakuten
-        shell: bash
-        run: |
-          set +e
-          python scripts/rakuten_gen.py 2>&1 | tee rakuten-test.log
-          status=${PIPESTATUS[0]}
-          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
-          exit "$status"
+      - name: Run three-channel diagnostic
+        run: python scripts/rakuten_test.py 2>&1 | tee rakuten-test.log
 
       - name: Save test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rakuten-test-results
+          name: rakuten-three-channel-test
           if-no-files-found: warn
           path: |
             rakuten-test.log
-            output/Rakuten@it.m3u
+            rakuten-test.m3u
