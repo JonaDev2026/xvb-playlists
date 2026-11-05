@@ -223,7 +223,7 @@ def main():
     TEMP.mkdir(exist_ok=True)
     OUTPUT.mkdir(exist_ok=True)
 
-    unexpected = [path.name for path in DATA.iterdir() if path.name != "loghi.json" and path.is_file()]
+    unexpected = [path.name for path in DATA.iterdir() if path.name != "loghi.json"]
     if unexpected:
         raise RuntimeError(f"La cartella data deve contenere solo loghi.json: {unexpected}")
 
