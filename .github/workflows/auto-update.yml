@@ -25,7 +25,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
 
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check requests
@@ -40,7 +39,7 @@ jobs:
           import json
 
           data = Path("data")
-          files = sorted(p.name for p in data.iterdir() if p.is_file())
+          files = sorted(p.name for p in data.iterdir())
           if files != ["loghi.json"]:
               raise SystemExit(f"data/ deve contenere solo loghi.json. Trovati: {files}")
 
