@@ -3,7 +3,9 @@ import re
 import requests
 from pathlib import Path
 
-OUTPUT = Path(__file__).resolve().parent.parent / "output" / "Pluto@it.m3u"
+ROOT = Path(__file__).resolve().parent.parent
+OUTPUT = ROOT / "output" / "Pluto@it.m3u"
+TEMP = ROOT / "temp"
 
 MASTER_URL = "https://raw.githubusercontent.com/iptv-org/iptv/refs/heads/master/streams/it_pluto.m3u"
 
@@ -166,8 +168,18 @@ def main():
         output.extend([entry, stream])
         total += 1
 
+    if total < 20:
+        raise RuntimeError(f"Playlist Pluto incompleta: solo {total} canali")
+
+    streams = [output[i + 1] for i in range(1, len(output), 2)]
+    if len(streams) != len(set(streams)):
+        raise RuntimeError("Playlist Pluto: URL duplicati")
+
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT.write_text("\n".join(output) + "\n", encoding="utf-8")
+    TEMP.mkdir(parents=True, exist_ok=True)
+    temporary = TEMP / "Pluto@it.m3u.tmp"
+    temporary.write_text("\n".join(output) + "\n", encoding="utf-8")
+    temporary.replace(OUTPUT)
 
     print()
     print(f"Canali: {total}")
