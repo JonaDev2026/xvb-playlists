@@ -175,7 +175,7 @@ jobs:
 
           for filename in guides:
               path = Path(filename)
-              content = path.read_text(encoding="utf-8")
+              content = path.read_text(encoding="utf-8-sig")
               marker = f"<!-- XVB-UPDATED: {stamp} -->"
               if content.startswith("<?xml"):
                   end = content.find("?>")
@@ -195,7 +195,7 @@ jobs:
           print("Timestamp di ricostruzione inserito in tutti e 6 i file")
           PY
 
-      - name: Validate all seven rebuilt files
+      - name: Validate all six rebuilt files
         if: steps.schedule.outputs.run == 'true'
         run: |
           python - <<'PY'
