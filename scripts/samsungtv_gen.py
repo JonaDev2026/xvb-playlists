@@ -8,11 +8,9 @@ from urllib.parse import urljoin, urlparse
 SOURCE = "https://raw.githubusercontent.com/matthuisman/i.mjh.nz/master/SamsungTVPlus/.channels.json.gz"
 BASE = "https://jmp2.uk/stvp-"
 
-OUTPUT = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "output",
-    "SamTV+@it.m3u"
-)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+OUTPUT = os.path.join(ROOT, "output", "SamTV+@it.m3u")
+TEMP = os.path.join(ROOT, "temp")
 
 BLACKLIST = [
     "ITBA1500001R6",
@@ -55,6 +53,8 @@ r.raise_for_status()
 database = json.loads(gzip.decompress(r.content).decode("utf-8"))
 
 channels = database["regions"]["it"]["channels"]
+if not isinstance(channels, dict) or not channels:
+    raise RuntimeError("Database Samsung Italia vuoto o non valido")
 
 channels = [
     {**value, "id": channel_id}
@@ -133,13 +133,15 @@ for index, channel in enumerate(channels, 1):
 
     time.sleep(0.1)
 
-if not available:
-    raise RuntimeError("Nessuno stream Samsung disponibile")
+if len(available) < 20:
+    raise RuntimeError(f"Playlist Samsung incompleta: solo {len(available)} canali disponibili")
 
 # Assicurati che la cartella di destinazione esista
 os.makedirs(os.path.dirname(OUTPUT), exist_ok=True)
+os.makedirs(TEMP, exist_ok=True)
+TEMP_OUTPUT = os.path.join(TEMP, "SamTV+@it.m3u.tmp")
 
-with open(OUTPUT, "w", encoding="utf-8") as f:
+with open(TEMP_OUTPUT, "w", encoding="utf-8") as f:
     f.write("#EXTM3U\n")
 
     for channel in available:
@@ -158,4 +160,5 @@ print()
 print("COMPLETATO")
 print(f"Canali disponibili: {len(available)}")
 print(f"Canali non disponibili: {len(unavailable)}")
+os.replace(TEMP_OUTPUT, OUTPUT)
 print(f"Playlist creata: {OUTPUT}")
