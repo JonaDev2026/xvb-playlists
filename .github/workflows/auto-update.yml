@@ -32,7 +32,7 @@ jobs:
           now = datetime.now(ZoneInfo("Europe/London"))
           run = now.hour in (6, 12) and now.minute < 30
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"run={'true' if run else 'false'}\\n")
+              f.write(f"run={'true' if run else 'false'}\n")
           print(f"Londra: {now:%Y-%m-%d %H:%M %Z}; ricostruzione: {run}")
           PY
 
@@ -177,7 +177,7 @@ jobs:
               if not content.startswith("#EXTM3U"):
                   raise SystemExit(f"Playlist non valida: {filename}")
               lines = content.splitlines(keepends=True)
-              marker = f"# XVB-UPDATED: {stamp}\\n"
+              marker = f"# XVB-UPDATED: {stamp}\n"
               if len(lines) > 1 and lines[1].startswith("# XVB-UPDATED:"):
                   lines[1] = marker
               else:
@@ -198,9 +198,9 @@ jobs:
                       finish = content.find("-->", start)
                       content = content[:start] + marker + content[finish + 3:]
                   else:
-                      content = content[:end + 2] + "\\n" + marker + content[end + 2:]
+                      content = content[:end + 2] + "\n" + marker + content[end + 2:]
               else:
-                  content = marker + "\\n" + content
+                  content = marker + "\n" + content
               path.write_text(content, encoding="utf-8")
 
           print("Timestamp di ricostruzione inserito in tutti e 7 i file")
