@@ -30,7 +30,7 @@ jobs:
           import os
 
           now = datetime.now(ZoneInfo("Europe/London"))
-          run = now.hour in (6, 12) and now.minute < 30
+          run = now.hour in (6, 12)
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write(f"run={'true' if run else 'false'}\n")
           print(f"Londra: {now:%Y-%m-%d %H:%M %Z}; ricostruzione: {run}")
