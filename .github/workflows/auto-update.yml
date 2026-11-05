@@ -118,12 +118,6 @@ jobs:
         if: steps.schedule.outputs.run == 'true'
         run: python scripts/epg_gen.py
 
-      - name: Update Rakuten EPG (existing playlist only)
-        if: steps.schedule.outputs.run == 'true'
-        id: rakuten_epg
-        continue-on-error: true
-        run: python scripts/epg_rakuten.py
-
       - name: Validate EPG files
         if: steps.schedule.outputs.run == 'true'
         run: |
@@ -145,10 +139,6 @@ jobs:
                   raise SystemExit(f"EPG non valido o vuoto: {filename}")
               print(f"{filename}: {len(channels)} canali, {len(programmes)} programmi")
 
-          rakuten = Path("epg/rakuten_it.xml")
-          if rakuten.exists():
-              root = ET.parse(rakuten).getroot()
-              print(f"Rakuten EPG presente: {len(root.findall('.//programme'))} programmi")
           PY
 
       - name: Mark all seven files as freshly rebuilt
@@ -168,7 +158,6 @@ jobs:
               "epg/xvb-Pluto.xml",
               "epg/xvb-SamTv.xml",
               "epg/xvb-dvb-it.xml",
-              "epg/rakuten_it.xml",
           ]
 
           for filename in playlists:
@@ -220,7 +209,6 @@ jobs:
               "epg/xvb-Pluto.xml",
               "epg/xvb-SamTv.xml",
               "epg/xvb-dvb-it.xml",
-              "epg/rakuten_it.xml",
           ]
 
           for filename in files:
