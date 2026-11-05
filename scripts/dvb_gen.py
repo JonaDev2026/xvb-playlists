@@ -7,11 +7,12 @@ import requests
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
+TEMP = ROOT / "temp"
 OUTPUT = ROOT / "output"
 
 MASTER_URL = "https://raw.githubusercontent.com/Free-TV/IPTV/refs/heads/master/playlists/playlist_italy.m3u8"
 
-MASTER_FILE = DATA / "playlist_italy.m3u8"
+MASTER_FILE = TEMP / "playlist_italy.m3u8"
 LOGOS_FILE = DATA / "loghi.json"
 PLAYLIST_FILE = OUTPUT / "DVB@it.m3u"
 
@@ -159,6 +160,7 @@ CATEGORIES = {
 def download_master():
     response = requests.get(MASTER_URL, timeout=60)
     response.raise_for_status()
+    MASTER_FILE.parent.mkdir(parents=True, exist_ok=True)
     MASTER_FILE.write_bytes(response.content)
     return response.text
 
@@ -218,7 +220,12 @@ def get_category(tvg_id):
 
 def main():
     DATA.mkdir(exist_ok=True)
+    TEMP.mkdir(exist_ok=True)
     OUTPUT.mkdir(exist_ok=True)
+
+    unexpected = [path.name for path in DATA.iterdir() if path.name != "loghi.json" and path.is_file()]
+    if unexpected:
+        raise RuntimeError(f"La cartella data deve contenere solo loghi.json: {unexpected}")
 
     if not LOGOS_FILE.exists():
         raise FileNotFoundError(LOGOS_FILE)
@@ -229,7 +236,12 @@ def main():
     with open(LOGOS_FILE, encoding="utf-8") as file:
         logos = json.load(file)
 
+    if not isinstance(logos, dict):
+        raise ValueError("loghi.json deve contenere un oggetto JSON")
+
     master_channels = parse_master(master_content)
+    if not master_channels:
+        raise RuntimeError("La playlist master DVB non contiene canali validi")
 
     result = []
     missing = []
@@ -260,10 +272,16 @@ def main():
         result.extend([info, selected["url"]])
         counts[category] = counts.get(category, 0) + 1
 
-    with open(PLAYLIST_FILE, "w", encoding="utf-8") as file:
+    channel_count = len(result) // 2
+    if channel_count < 30:
+        raise RuntimeError(f"Playlist DVB incompleta: solo {channel_count} canali")
+
+    temporary = TEMP / "DVB@it.m3u.tmp"
+    with open(temporary, "w", encoding="utf-8") as file:
         file.write("#EXTM3U\n")
         file.write("\n".join(result))
         file.write("\n")
+    temporary.replace(PLAYLIST_FILE)
 
     print()
     print("Canali creati:", len(result) // 2)
