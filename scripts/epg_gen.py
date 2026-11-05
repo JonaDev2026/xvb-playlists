@@ -29,6 +29,7 @@ def main():
             response = session.get(url, timeout=180)
             response.raise_for_status()
             data = gzip.decompress(response.content) if compressed else response.content
+            data = data.removeprefix(b"\xef\xbb\xbf")
             root = ET.fromstring(data)
 
             if root.tag.split("}")[-1] != "tv":
