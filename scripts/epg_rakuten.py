@@ -12,6 +12,7 @@ from urllib3.util.retry import Retry
 PLAYLIST_URL = "https://raw.githubusercontent.com/JonaDev2026/xvb-playlists/refs/heads/main/output/Rakuten%40it.m3u"
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_FILE = os.path.join(BASE_DIR, "epg", "rakuten_it.xml")
+TEMP_DIR = os.path.join(BASE_DIR, "temp")
 
 API_URL = "https://gizmo.rakuten.tv/v3/live_channels"
 
@@ -209,6 +210,9 @@ def main():
     for channel in unmatched:
         print(f"NON TROVATO: {channel['id']} - {channel['name']}")
 
+    if not matched:
+        raise RuntimeError("Nessun canale della playlist associato al catalogo Rakuten")
+
     root = ET.Element("tv", attrib={"source-info-name": "Rakuten TV"})
 
     for channel in playlist:
@@ -356,16 +360,24 @@ def main():
 
         time.sleep(0.3)
 
+    if total == 0:
+        raise RuntimeError("EPG Rakuten vuoto: nessun programma recuperato")
+
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+    os.makedirs(TEMP_DIR, exist_ok=True)
+    temporary_file = os.path.join(TEMP_DIR, "rakuten_it.xml.tmp")
 
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ")
 
     tree.write(
-        OUTPUT_FILE,
+        temporary_file,
         encoding="utf-8",
         xml_declaration=True
     )
+
+    ET.parse(temporary_file)
+    os.replace(temporary_file, OUTPUT_FILE)
 
     print("\nCompletato")
     print(f"Canali playlist: {len(playlist)}")
