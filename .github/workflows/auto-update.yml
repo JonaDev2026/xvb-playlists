@@ -3,7 +3,7 @@ name: Update playlists and EPG
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 5,6,11,12 * * *"
+    - cron: "0 */6 * * *"
 
 permissions:
   contents: write
@@ -21,37 +21,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check London schedule
-        id: schedule
-        run: |
-          python - <<'PY'
-          from datetime import datetime
-          from zoneinfo import ZoneInfo
-          import os
-
-          now = datetime.now(ZoneInfo("Europe/London"))
-          run = os.environ.get("GITHUB_EVENT_NAME") != "schedule" or now.hour in (6, 12)
-          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
-              f.write(f"run={'true' if run else 'false'}\n")
-          print(f"Londra: {now:%Y-%m-%d %H:%M %Z}; ricostruzione: {run}")
-          PY
-
       - name: Set up Python
-        if: steps.schedule.outputs.run == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install dependencies
-        if: steps.schedule.outputs.run == 'true'
         run: python -m pip install --disable-pip-version-check requests
 
       - name: Prepare temporary directory
-        if: steps.schedule.outputs.run == 'true'
         run: mkdir -p temp data output epg
 
       - name: Validate data directory
-        if: steps.schedule.outputs.run == 'true'
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -72,19 +53,15 @@ jobs:
           PY
 
       - name: Generate DVB playlist
-        if: steps.schedule.outputs.run == 'true'
         run: python scripts/dvb_gen.py
 
       - name: Generate Pluto playlist
-        if: steps.schedule.outputs.run == 'true'
         run: python scripts/pluto_gen.py
 
       - name: Generate Samsung TV Plus playlist
-        if: steps.schedule.outputs.run == 'true'
         run: python scripts/samsungtv_gen.py
 
       - name: Validate generated playlists
-        if: steps.schedule.outputs.run == 'true'
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -115,11 +92,9 @@ jobs:
           PY
 
       - name: Update Pluto, Samsung and DVB EPG
-        if: steps.schedule.outputs.run == 'true'
         run: python scripts/epg_gen.py
 
       - name: Validate EPG files
-        if: steps.schedule.outputs.run == 'true'
         run: |
           python - <<'PY'
           import xml.etree.ElementTree as ET
@@ -142,7 +117,6 @@ jobs:
           PY
 
       - name: Mark all six files as freshly rebuilt
-        if: steps.schedule.outputs.run == 'true'
         run: |
           python - <<'PY'
           from datetime import datetime, timezone
@@ -196,7 +170,6 @@ jobs:
           PY
 
       - name: Validate all six rebuilt files
-        if: steps.schedule.outputs.run == 'true'
         run: |
           python - <<'PY'
           import xml.etree.ElementTree as ET
@@ -223,7 +196,6 @@ jobs:
           PY
 
       - name: Commit updated playlists and EPG
-        if: steps.schedule.outputs.run == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
