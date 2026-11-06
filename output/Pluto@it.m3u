@@ -1,5 +1,5 @@
 #EXTM3U
-# XVB-UPDATED: 2026-11-05T17:37:24Z
+# XVB-UPDATED: 2026-11-06T22:58:42Z
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/60940a07d88ba90007b9cb71/colorLogoPNG.png" tvg-chno="5510" group-title="Intrattenimento" tvg-id="16AnnieIncinta.de@IT",16 Anni e Incinta
 https://jmp2.uk/plu-60940a07d88ba90007b9cb71.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/64ec5c6644fe100009d114ae/colorLogoPNG.png" tvg-chno="5420" group-title="Intrattenimento" tvg-id="",Affare Fatto
@@ -84,7 +84,7 @@ https://jmp2.uk/plu-60a2837f8154ab0007c4dcdf.m3u8
 https://jmp2.uk/plu-65d7211d0d45610008ffcf92.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/65cb76723a116800079e1fc3/colorLogoPNG.png" tvg-chno="5186" group-title="Intrattenimento" tvg-id="",Love Boat
 https://jmp2.uk/plu-65cb76723a116800079e1fc3.m3u8
-#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/6349279ed5023700078f2bc2/colorLogoPNG.png" tvg-chno="5150" group-title="Intrattenimento" tvg-id="",Mai dire sì
+#EXTINF:-1 group-title="Intrattenimento" tvg-id="",Mai dire sì
 https://jmp2.uk/plu-6349279ed5023700078f2bc2.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/686cfe983ffa5e0c91cdb5df/colorLogoPNG_1765897494203.png" tvg-chno="5755" group-title="Bambini" tvg-id="",Mattel Junior
 https://jmp2.uk/plu-686cfe983ffa5e0c91cdb5df.m3u8
@@ -198,7 +198,7 @@ https://jmp2.uk/plu-66177d18c8311c0008d077d0.m3u8
 https://jmp2.uk/plu-66d9a98961dbf00008efb5fc.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/6093f6f8351eb0000754afb8/colorLogoPNG_1784270298163.png" tvg-chno="5740" group-title="Intrattenimento" tvg-id="",Super! Cartoni Animati (720p)
 https://jmp2.uk/plu-6093f6f8351eb0000754afb8.m3u8
-#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/609401db8cf51c00084b592e/colorLogoPNG_1784270441871.png" tvg-chno="5780" group-title="Intrattenimento" tvg-id="SuperiCarly.us@Italy",Super! iCarly
+#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/609401db8cf51c00084b592e/colorLogoPNG_1784270441871.png" tvg-chno="5784" group-title="Intrattenimento" tvg-id="SuperiCarly.us@Italy",Super! iCarly
 https://jmp2.uk/plu-609401db8cf51c00084b592e.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/67f4f99729b03f18cb36647e/colorLogoPNG_1784270665487.png" tvg-chno="5745" group-title="Bambini" tvg-id="",Super! Kids Classics (720p)
 https://jmp2.uk/plu-67f4f99729b03f18cb36647e.m3u8
