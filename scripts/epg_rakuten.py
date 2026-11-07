@@ -285,9 +285,16 @@ def main():
                     if isinstance(live_programs, dict):
                         live_programs = live_programs.get("data", [])
 
+                    channel_images = api_channel.get("images") or {}
+                    channel_snapshot = clean_text(
+                        channel_images.get("snapshot_webp")
+                    )
+
                     for program in live_programs:
                         title = clean_text(
-                            program.get("title") or program.get("name")
+                            program.get("subtitle")
+                            or program.get("title")
+                            or program.get("name")
                         )
 
                         if not title:
@@ -311,6 +318,14 @@ def main():
                         description = clean_text(
                             program.get("description")
                         )
+
+                        program_images = program.get("images") or {}
+                        snapshot = clean_text(
+                            program_images.get("snapshot_webp")
+                        )
+
+                        if not snapshot:
+                            snapshot = channel_snapshot
 
                         for target in target_channels:
                             key = (
@@ -345,6 +360,13 @@ def main():
                                     "desc",
                                     lang="it"
                                 ).text = description
+
+                            if snapshot:
+                                ET.SubElement(
+                                    element,
+                                    "icon",
+                                    src=snapshot
+                                )
 
                             total += 1
 
