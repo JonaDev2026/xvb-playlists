@@ -94,6 +94,9 @@ jobs:
       - name: Update Pluto, Samsung and DVB EPG
         run: python scripts/epg_gen.py
 
+      - name: Update Rakuten EPG
+        run: python scripts/epg_rakuten.py
+
       - name: Validate EPG files
         run: |
           python - <<'PY'
@@ -104,6 +107,7 @@ jobs:
               "epg/xvb-Pluto.xml",
               "epg/xvb-SamTv.xml",
               "epg/xvb-dvb-it.xml",
+              "epg/rakuten_it.xml",
           ]
 
           for filename in files:
@@ -116,7 +120,7 @@ jobs:
 
           PY
 
-      - name: Mark all six files as freshly rebuilt
+      - name: Mark all seven files as freshly rebuilt
         run: |
           python - <<'PY'
           from datetime import datetime, timezone
@@ -132,6 +136,7 @@ jobs:
               "epg/xvb-Pluto.xml",
               "epg/xvb-SamTv.xml",
               "epg/xvb-dvb-it.xml",
+              "epg/rakuten_it.xml",
           ]
 
           for filename in playlists:
@@ -166,10 +171,10 @@ jobs:
                   content = marker + "\n" + content
               path.write_text(content, encoding="utf-8")
 
-          print("Timestamp di ricostruzione inserito in tutti e 6 i file")
+          print("Timestamp di ricostruzione inserito in tutti e 7 i file")
           PY
 
-      - name: Validate all six rebuilt files
+      - name: Validate all seven rebuilt files
         run: |
           python - <<'PY'
           import xml.etree.ElementTree as ET
@@ -182,6 +187,7 @@ jobs:
               "epg/xvb-Pluto.xml",
               "epg/xvb-SamTv.xml",
               "epg/xvb-dvb-it.xml",
+              "epg/rakuten_it.xml",
           ]
 
           for filename in files:
@@ -205,7 +211,8 @@ jobs:
             output/SamTV+@it.m3u \
             epg/xvb-Pluto.xml \
             epg/xvb-SamTv.xml \
-            epg/xvb-dvb-it.xml
+            epg/xvb-dvb-it.xml \
+            epg/rakuten_it.xml
           git commit -m "Rebuild playlists and EPG"
           git push
 
