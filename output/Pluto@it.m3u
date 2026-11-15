@@ -1,5 +1,5 @@
 #EXTM3U
-# XVB-UPDATED: 2026-11-15T06:00:59Z
+# XVB-UPDATED: 2026-11-15T13:54:22Z
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/60940a07d88ba90007b9cb71/colorLogoPNG.png" tvg-chno="5510" group-title="Intrattenimento" tvg-id="16AnnieIncinta.de@IT",16 Anni e Incinta
 https://jmp2.uk/plu-60940a07d88ba90007b9cb71.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/64ec5c6644fe100009d114ae/colorLogoPNG.png" tvg-chno="5420" group-title="Intrattenimento" tvg-id="",Affare Fatto
@@ -16,7 +16,7 @@ https://jmp2.uk/plu-638f286445264d00084ec6dc.m3u8
 https://jmp2.uk/plu-686cfdf894a028da3aac4252.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/62e7fa5ab5062e0007dcf97d/colorLogoPNG_1770365241843.png" tvg-chno="5145" group-title="Intrattenimento" tvg-id="",BBC Series
 https://jmp2.uk/plu-62e7fa5ab5062e0007dcf97d.m3u8
-#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/66a0eea88561260008b1c5d0/colorLogoPNG.png" tvg-chno="5110" group-title="Intrattenimento" tvg-id="",Carabinieri
+#EXTINF:-1 group-title="Intrattenimento" tvg-id="",Carabinieri
 https://jmp2.uk/plu-66a0eea88561260008b1c5d0.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/6093f9ed2c75660007322bb7/colorLogoPNG_1750862971704.png" tvg-chno="5440" group-title="Intrattenimento" tvg-id="",Catfish
 https://jmp2.uk/plu-6093f9ed2c75660007322bb7.m3u8
