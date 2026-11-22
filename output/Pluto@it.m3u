@@ -1,5 +1,5 @@
 #EXTM3U
-# XVB-UPDATED: 2026-11-21T06:48:07Z
+# XVB-UPDATED: 2026-11-22T06:18:13Z
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/60940a07d88ba90007b9cb71/colorLogoPNG.png" tvg-chno="5510" group-title="Intrattenimento" tvg-id="16AnnieIncinta.de@IT",16 Anni e Incinta
 https://jmp2.uk/plu-60940a07d88ba90007b9cb71.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/64ec5c6644fe100009d114ae/colorLogoPNG.png" tvg-chno="5420" group-title="Intrattenimento" tvg-id="",Affare Fatto
@@ -184,13 +184,13 @@ https://jmp2.uk/plu-634926e4b51d2d00077819a2.m3u8
 https://jmp2.uk/plu-63eb57d6c111bc0008fe2658.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/6245d3792792150007e20634/colorLogoPNG.png" tvg-chno="5115" group-title="Intrattenimento" tvg-id="",Settimo Cielo
 https://jmp2.uk/plu-6245d3792792150007e20634.m3u8
-#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/62bc1f502b70e3000706298e/colorLogoPNG.png" tvg-chno="5610" group-title="Intrattenimento" tvg-id="SouthPark.de@IT",South Park
+#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/62bc1f502b70e3000706298e/colorLogoPNG.png" tvg-chno="5610" group-title="Intrattenimento" tvg-id="",South Park
 https://jmp2.uk/plu-62bc1f502b70e3000706298e.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/69b1489b5828e7c242d83064/colorLogoPNG_1775118441487.png" tvg-chno="5835" group-title="Intrattenimento" tvg-id="SpaceLivepoweredbysen.uk@SD",Space Live (720p)
 https://jmp2.uk/plu-69b1489b5828e7c242d83064.m3u8
 #EXTINF:-1 group-title="Intrattenimento" tvg-id="",Squadra Speciale Cobra 11
 https://jmp2.uk/plu-625e6cc905e09f00073addee.m3u8
-#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/65cb73d33ba51e00084cabad/colorLogoPNG.png" tvg-chno="5355" group-title="Intrattenimento" tvg-id="StarTrekVoyager.de@IT",Star Trek: Voyager
+#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/65cb73d33ba51e00084cabad/colorLogoPNG.png" tvg-chno="5355" group-title="Intrattenimento" tvg-id="",Star Trek: Voyager
 https://jmp2.uk/plu-65cb73d33ba51e00084cabad.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/66177d18c8311c0008d077d0/colorLogoPNG.png" tvg-chno="5410" group-title="Intrattenimento" tvg-id="StorieCriminali.es@IT",Storie Criminali
 https://jmp2.uk/plu-66177d18c8311c0008d077d0.m3u8
@@ -208,7 +208,7 @@ https://jmp2.uk/plu-6093f7b5bb49b90007cecaad.m3u8
 https://jmp2.uk/plu-6093f9281db477000759fce0.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/66a8c8b3d2d50d000821fc4c/colorLogoPNG.png" tvg-chno="5170" group-title="Intrattenimento" tvg-id="",Tandem
 https://jmp2.uk/plu-66a8c8b3d2d50d000821fc4c.m3u8
-#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/62e7fc8c0d061100083946a9/colorLogoPNG.png" tvg-chno="5515" group-title="Intrattenimento" tvg-id="TeenMom.de@IT",Teen Mom
+#EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/62e7fc8c0d061100083946a9/colorLogoPNG.png" tvg-chno="5515" group-title="Intrattenimento" tvg-id="",Teen Mom
 https://jmp2.uk/plu-62e7fc8c0d061100083946a9.m3u8
 #EXTINF:-1 tvg-logo="https://images.pluto.tv/channels/62619405c733e8000732d1fe/colorLogoPNG.png" tvg-chno="5760" group-title="Intrattenimento" tvg-id="TeenageMutantNinjaTurtles.de@IT",Teenage Mutant Ninja Turtles (720p)
 https://jmp2.uk/plu-62619405c733e8000732d1fe.m3u8
